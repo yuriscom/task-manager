@@ -1,0 +1,42 @@
+# Node, Bower and other JavaScript and front-end development stuff
+.idea
+lib-cov
+pids
+logs
+results
+bower_components
+node_modules/*
+
+# Mac OS X Generated Files
+Icon
+.DS_Store
+.AppleDouble
+.LSOverride
+.Spotlight-V100
+.Trashes
+._*
+
+# Windows Generated Files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN
+
+# General
+.bin
+bin
+tmp
+log
+*.log
+*.tmp
+*.bak
+*.swp
+*.csv
+*.dat
+*.out
+*.pid
+*.gz
+*.seed
+
+# Project
+#configuration/env.json

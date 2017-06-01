@@ -1,0 +1,27 @@
+{
+  "name": "tasks-manager",
+  "version": "1.0.0",
+  "description": "Simple tasks manager",
+  "private": true,
+  "author": "Yuri Skomorovsky yuriscom@gmail.com",
+  "license": "",
+  "main": "index.js",
+  "bin": "index.js",
+  "scripts": {},
+  "dependencies": {
+    "cheerio": "^0.22.0",
+    "json2xls": "^0.1.2",
+    "request": "2.69.0",
+    "request-promise": "0.3.3",
+    "restify": "5.0.0-beta-4.0",
+    "restify-clients": "^1.5.0",
+    "restify-plugins": "^1.5.1",
+    "sync-request": "^4.0.1",
+    "underscore": "1.8.3",
+    "underscore.string": "2.4.0",
+    "urlencode": "^1.1.0",
+    "util": "0.10.3",
+    "winston": "1.1.2",
+    "winston-graylog2": "0.4.3"
+  }
+}
