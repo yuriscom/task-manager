@@ -12,8 +12,7 @@ readlineInterface.on('line', function(command) {
   readlineInterface.prompt();
 }).on('close', close);
 
-function runCommand(line) {
-
+function runCommand(line, callback) {
   var lineAr = line.split(" ");
   var command = lineAr.shift();
   var args = lineAr;
@@ -31,11 +30,15 @@ function runCommand(line) {
       console.log("blabla");
       break;
     case 'ds':
-
-      require('./generators/ds.js')(argObj, function () {
+      var propercallback = function(res) {
         console.log("done.");
         readlineInterface.prompt();
-      });
+        if (callback) {
+          callback(res);
+        }
+      }
+
+      require('./generators/ds.js')(argObj, propercallback);
     case 'quit':
     case 'q':
       close();

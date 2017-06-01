@@ -1,6 +1,6 @@
 var request = require("request");
-var querystring = require('qs');
-var syncRequest = require('sync-request');
+// var querystring = require('qs');
+// var syncRequest = require('sync-request');
 var _ = require("underscore");
 var _string = require("underscore.string");
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";  // to ignore self-signed ssl
@@ -492,8 +492,10 @@ prot.receivedIdsHandler = function (ids) {
   scrapeDoctors.call(self, ids).then(function (resAr) {
     var xls = json2xls(resAr);
 
-    fs.writeFileSync('/tmp/data.xlsx', xls, 'binary');
-    p("done all");
+    var filepath = __dirname + '/data/data.xlsx';
+    fs.writeFileSync(filepath, xls, 'binary');
+    //p("done all");
+    self.callback(filepath);
   })
 }
 
