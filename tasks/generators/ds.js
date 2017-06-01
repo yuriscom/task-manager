@@ -492,7 +492,7 @@ prot.receivedIdsHandler = function (ids) {
   scrapeDoctors.call(self, ids).then(function (resAr) {
     var xls = json2xls(resAr);
 
-    fs.writeFileSync('/Users/yuriskomorovsky/projects/data.xlsx', xls, 'binary');
+    fs.writeFileSync('/tmp/data.xlsx', xls, 'binary');
     p("done all");
   })
 }
