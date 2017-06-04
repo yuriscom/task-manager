@@ -8,7 +8,7 @@ var tasks = require('./tasks');
 
 var WebSocket = require('ws');
 var WebSocketServer = require('ws').Server;
-var wss = new WebSocketServer({port: 8080});
+var wss = new WebSocketServer({port: 8081});
 var fs = require('fs');
 
 
@@ -24,7 +24,7 @@ app.get('/', function(req, res){
 })
 
 app.get('/data', function (req, res) {
-  var ws = new WebSocket('ws://localhost:8080');
+  var ws = new WebSocket('ws://localhost:8081');
 
   var qAr = [];
   for (var k in req.query) {
