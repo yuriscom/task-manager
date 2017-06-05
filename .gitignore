@@ -1,5 +1,6 @@
 # Node, Bower and other JavaScript and front-end development stuff
 .idea
+.xlsx
 lib-cov
 pids
 logs
