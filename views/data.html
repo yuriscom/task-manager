@@ -1,0 +1,22 @@
+<html>
+<head>
+    <script>
+        var command = "<%= command %>";
+        var ws = new WebSocket('ws://localhost:8081');
+        ws.onopen = function (event) {
+            ws.send(command);
+        };
+        ws.onmessage = function (event) {
+            if (event.data == 'noresults') {
+                document.getElementById('data').innerHTML += " Done.<br/>No results found for your search.";
+            } else {
+                document.getElementById('data').innerHTML += " Done.<br/>Click the link to <a href=\"/getfile?path=" + window.btoa(event.data) + "\">Get Excel file</a>";
+            }
+        };
+    </script>
+</head>
+<body>
+<% include form.html %>
+<div id='data'>Scraping, please wait...</div>
+</body>
+</html>

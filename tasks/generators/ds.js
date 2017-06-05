@@ -42,6 +42,7 @@ function ApiProcessor(options, callback) {
 var prot = ApiProcessor.prototype;
 
 exports = module.exports = function (options, callback) {
+  console.log("inside task");
   var proc = new ApiProcessor(options, callback);
   proc.run();
   //proc.mock();
@@ -489,6 +490,11 @@ prot.doctorParse = function (id, data) {
 
 prot.receivedIdsHandler = function (ids) {
   var self = this;
+
+  if (!ids.length) {
+    return self.callback("noresults");
+  }
+
   scrapeDoctors.call(self, ids).then(function (resAr) {
     var xls = json2xls(resAr);
 
@@ -531,6 +537,7 @@ prot.resultHandler = function (err, httpResponse, body) {
 prot.loadForm = function (callback) {
   var url = "http://www.cpso.on.ca/Public-Register/All-Doctors-Search";
   var self = this;
+  console.log("loading form...");
   return request(url, function (err, response, body) {
     if (err) {
       console.log(err);
@@ -547,7 +554,7 @@ prot.loadForm = function (callback) {
       myCookiesAr.push(matches[0]);
     }
     self.cookies = myCookiesAr.join(";");
-
+    console.log("done.");
     callback(body);
   })
 }

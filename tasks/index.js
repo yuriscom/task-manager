@@ -24,7 +24,9 @@ function runCommand(line, callback) {
     }
   }
 
-  console.log(argObj);
+  // console.log(command);
+  // console.log(argObj);
+
   switch (command) {
     case 'bla':
       console.log("blabla");
