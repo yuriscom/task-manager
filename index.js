@@ -12,7 +12,7 @@ var tasks = require('./tasks');
 
 var WebSocket = require('ws');
 var WebSocketServer = require('ws').Server;
-var wss = new WebSocketServer({port: 8081});
+var wss = new WebSocketServer({host:'ec2-52-70-181-57.compute-1.amazonaws.com' ,port: 9090});
 var fs = require('fs');
 
 
@@ -65,7 +65,7 @@ app.get('/getfile', function(req, res){
   //res.end(new Buffer(data, 'binary'));
 })
 
-app.listen(3000, function () {
+app.listen(80, function () {
   console.log('Start Application Service');
 });
 
@@ -74,6 +74,7 @@ wss.on('connection', function (ws) {
   ws.on('message', function (message) {
     console.log("message received. starting task.");
     tasks.runCommand(message, function (res) {
+console.log(res);
       ws.send(res);
     });
   });
