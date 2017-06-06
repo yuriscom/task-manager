@@ -10,9 +10,16 @@ const http = require('http');
 const url = require('url');
 var tasks = require('./tasks');
 
+const config = require(__dirname + "/config.json");
+
+var isLocal = false;
+if (config.env == "local") {
+  isLocal = true;
+}
+
 var WebSocket = require('ws');
 var WebSocketServer = require('ws').Server;
-var wss = new WebSocketServer({host:'ec2-52-70-181-57.compute-1.amazonaws.com' ,port: 9090});
+var wss = new WebSocketServer({host:config.wshost ,port: 9090});
 var fs = require('fs');
 
 
@@ -29,7 +36,7 @@ app.get('/scrape', function (req, res) {
   }
 
   var args = qAr.join(" ");
-  res.render("data.html", { command: "ds " + args });
+  res.render("data.html", { command: "ds " + args, wshost: config.wshost });
   // fs.readFile('data.html', function (err, data) {
   //   res.writeHead(200, {
   //     'Content-Type': 'text/html',
@@ -65,7 +72,7 @@ app.get('/getfile', function(req, res){
   //res.end(new Buffer(data, 'binary'));
 })
 
-app.listen(80, function () {
+app.listen(3000, function () {
   console.log('Start Application Service');
 });
 
@@ -74,7 +81,6 @@ wss.on('connection', function (ws) {
   ws.on('message', function (message) {
     console.log("message received. starting task.");
     tasks.runCommand(message, function (res) {
-console.log(res);
       ws.send(res);
     });
   });

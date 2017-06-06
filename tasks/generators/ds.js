@@ -182,7 +182,7 @@ prot.mockDoctor = function () {
       var detAr = detStr.trim().split(/\s{2,}/g).filter(function (val) {
         return val && (val != "<br>")
       })
-      
+
       var loc = detAr[0];
       var contacts = detAr[1];
       var phonePattern = /Phone:(&#xA0;)?([\+\(\)\d\-\s]+)/
@@ -318,14 +318,14 @@ prot.doctorParse = function (id, data) {
     city: '',
     province: '',
     postal: '',
-    'Registration Class':'',
-    specialties:'',
-    'Secondary Address':'',
-    'Secondary Phone':'',
-    'Secondary Fax':'',
-    'Secondary Postal':'',
-    'Secondary City':'',
-    'Secondary Province':'',
+    'Registration Class': '',
+    specialties: '',
+    'Secondary Address': '',
+    'Secondary Phone': '',
+    'Secondary Fax': '',
+    'Secondary Postal': '',
+    'Secondary City': '',
+    'Secondary Province': '',
 
   };
 
@@ -498,7 +498,7 @@ prot.receivedIdsHandler = function (ids) {
   scrapeDoctors.call(self, ids).then(function (resAr) {
     var xls = json2xls(resAr);
 
-    var filepath = __dirname + '/data/data.xlsx';
+    var filepath = __dirname + '/data/' + self.getFilename();
     fs.writeFileSync(filepath, xls, 'binary');
     //p("done all");
     self.callback(filepath);
@@ -692,6 +692,13 @@ prot.getNextPage = function (body, callback) {
   }, callback);
 }
 
+
+prot.getFilename = function () {
+  var spec = (this.params.spec ? this.params.spec + '' : '0');
+  var city = (this.params.city ? this.params.city + '' : '0');
+  var postal = (this.params.postal ? this.params.postal + '' : '0');
+  return 'data_spec' + spec + '_city' + city + '_postal' + postal + '.xlsx';
+}
 
 prot.getFirstPage = function (params, body, callback) {
 

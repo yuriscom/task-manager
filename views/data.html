@@ -2,7 +2,8 @@
 <head>
     <script>
         var command = "<%= command %>";
-        var ws = new WebSocket('ws://ec2-52-70-181-57.compute-1.amazonaws.com:9090');
+        var wshost = "<%= wshost %>";
+        var ws = new WebSocket('ws://'+wshost+':9090');
         ws.onopen = function (event) {
             ws.send(command);
         };
