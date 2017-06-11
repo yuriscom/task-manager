@@ -241,11 +241,12 @@ prot.mock = function () {
     });
 
     //p(idDoctorAr);
-    scrapeDoctors.call(self, idDoctorAr)
+    //scrapeDoctors.call(self, idDoctorAr)
+    self.scrapeDoctors(idDoctorAr);
   });
 }
 
-async function scrapeDoctors(idDoctorAr) {
+prot.scrapeDoctors = async function(idDoctorAr) {
   var chunkSize = 3;
 
   var chunks = [];
@@ -495,7 +496,9 @@ prot.receivedIdsHandler = function (ids) {
     return self.callback("noresults");
   }
 
-  scrapeDoctors.call(self, ids).then(function (resAr) {
+
+  //scrapeDoctors.call(self, ids).then(function (resAr) {
+  self.scrapeDoctors(ids).then(function (resAr) {
     var xls = json2xls(resAr);
 
     var filepath = __dirname + '/data/' + self.getFilename();
@@ -584,7 +587,7 @@ prot.getPage = function (callback, body, params, isFirstPage) {
       //"p$lt$ctl03$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddSpecialist": 219,
       "p$lt$ctl03$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddSpecialist": params.spec || 219,
       "p$lt$ctl03$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$grpStatus": "rdoStatusActive",
-      "p$lt$ctl03$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddCity": params.city || "Select -->",
+      "p$lt$ctl03$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddCity": (!params.postal && params.city ? params.city : "Select -->"),
       "p$lt$ctl03$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$txtPostalCode": params.postal || '',
 
       "p$lt$ctl03$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddHospitalCity": "Select -->",
