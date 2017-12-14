@@ -64,155 +64,6 @@ prot.mockDoctor = function () {
     if (err) {
       return console.log(err);
     }
-    $ = cheerio.load(data);
-    var sections = $('#profile-content');
-
-    if (sections.length != 4) {
-      console.log("ERROR. sections length is not correct");
-    }
-
-    var section1 = sections.eq(0);
-    var detailsSection1 = section1.find("div[class=detail]");
-    var section2 = sections.eq(1);
-    var detailsSection2 = section2.find("div[class=detail]");
-    var section3 = sections.eq(2);
-    var detailsSection3 = section3.find("div[class=detail]");
-    var section4 = sections.eq(3);
-    var detailsSection4 = section4.find("div[class=detail]");
-
-
-    // doctor information
-    var infoMap = {
-      "Given Name:": "firstname",
-      "Surname:": "lastname",
-      "Gender:": "gender",
-      "Language Fluency:": "language"
-    }
-    var detObj = detailsSection1.eq(0);
-    var detStr = detObj.find("p").text();
-    var detAr = detStr.split(/\s{2,}/g)
-      .filter(function (val) {
-        return val
-      }); // filter out empty vals
-    for (var i = 0; i < detAr.length; i += 2) {
-      var key = detAr[i];
-      if (infoMap[key]) {
-        doctor[infoMap[key]] = detAr[i + 1];
-      }
-    }
-
-    // Primary Practice Location
-    var detObj = detailsSection1.eq(1);
-    var detStr = detObj.find("p").html();
-
-    //detStr = detStr.replace("<br>", " ");
-    var detAr = detStr.trim().split(/\s{2,}/g).filter(function (val) {
-      return val && (val != "<br>")
-    })
-    if (detAr.length != 2) {
-      console.log("ERROR. practice location length is not correct");
-    }
-    var loc = detAr[0];
-    var contacts = detAr[1];
-    var phonePattern = /Phone:(&#xA0;)?([\+\(\)\d\-\s]+)/
-    var faxPattern = /Fax:(&#xA0;)?([\+\(\)\d\-\s]+)/
-    var matchesP = phonePattern.exec(contacts);
-    if (matchesP) {
-      doctor.phone = matchesP[2];
-    }
-    var matchesF = faxPattern.exec(contacts);
-    if (matchesF) {
-      doctor.fax = matchesF[2];
-    }
-
-    var locAr = loc.split("<br>");
-    var locLast = locAr.pop();
-    locLastAr = locLast.split("&#xA0;").filter(function (val) {
-      return val
-    }); // filter out empty vals
-
-    if (locLastAr.length != 3) {
-      console.log("ERROR. loclast length is not correct");
-    }
-    doctor.city = locLastAr[0] ? locLastAr[0] : '';
-    doctor.province = locLastAr[1] ? locLastAr[1] : '';
-    doctor.postal = locLastAr[2] ? locLastAr[2] : '';
-    doctor.address = locAr.join(", ");
-
-
-    // Current Registration
-    var detObj = detailsSection1.eq(2);
-    var detStr = detObj.find("p").text();
-    var detAr = detStr.split(/\s{2,}/g)
-      .filter(function (val) {
-        return val
-      }); // filter out empty vals
-    if (detAr[0] == 'Registration Class:') {
-      doctor['Registration Class'] = detAr[1];
-    }
-
-    // Specialties
-    var detObj = detailsSection1.eq(3);
-    var specialties = [];
-    detObj.find("tr").each(function (i, elem) {
-      if (i > 0) {
-        var tr = $(this).text();
-        var detAr = tr.split(/\s{2,}/g)
-          .filter(function (val) {
-            return val
-          }); // filter out empty vals
-        if (detAr.length) {
-          specialties.push(detAr[0]);
-        }
-      }
-    })
-    doctor.specialties = specialties.join(", ");
-
-    // Secondary address
-    var h2List = section2.find("h2");
-    h2 = h2List.eq(1);
-    if (h2.text().trim() == "Secondary Practice Location") {
-      var detObj = detailsSection2.eq(1);
-      var detStr = detObj.find("p").html();
-
-      if (detStr.indexOf('Canada') > -1) {
-        detStr = detStr.replace('Canada', "  ");
-      }
-
-      var detAr = detStr.trim().split(/\s{2,}/g).filter(function (val) {
-        return val && (val != "<br>")
-      })
-
-      var loc = detAr[0];
-      var contacts = detAr[1];
-      var phonePattern = /Phone:(&#xA0;)?([\+\(\)\d\-\s]+)/
-      var faxPattern = /Fax:(&#xA0;)?([\+\(\)\d\-\s]+)/
-      var matchesP = phonePattern.exec(contacts);
-      if (matchesP) {
-        doctor['Secondary Phone'] = matchesP[2];
-      }
-      var matchesF = faxPattern.exec(contacts);
-      if (matchesF) {
-        doctor['Secondary Fax'] = matchesF[2];
-      }
-
-      var locAr = loc.split("<br>").filter(function (val) {
-        return val && (val != "<br>")
-      });
-
-      var locLast = locAr.pop();
-      locLastAr = locLast.split("&#xA0;").filter(function (val) {
-        return val
-      }); // filter out empty vals
-
-      if (locLastAr.length != 3) {
-        console.log("ERROR. loclast length is not correct");
-      }
-      doctor['Secondary City'] = locLastAr[0] ? locLastAr[0] : '';
-      doctor['Secondary Province'] = locLastAr[1] ? locLastAr[1] : '';
-      doctor['Secondary Postal'] = locLastAr[2] ? locLastAr[2] : '';
-      doctor['Secondary Address'] = locAr.join(", ");
-    }
 
 
     p(doctor);
@@ -285,8 +136,16 @@ prot.doChunkedRequests = function (ids) {
   })
 }
 
-prot.doctorScrape = function (id) {
-  var url = "http://www.cpso.on.ca/public-register/doctor-details-print.aspx?view=9&id=" + id;
+prot.doctorScrape = function (idStr) {
+  //http://www.cpso.on.ca/public-register/doctor-details-print.aspx?view=5&id=74173&ref-no=0139540
+  //var url = "http://www.cpso.on.ca/public-register/doctor-details-print.aspx?view=9&id=" + id;
+  //idStr = '0139540-74173';
+  //idStr = '0288931-100187';
+
+  let idAr = idStr.split('-');
+  let id=idAr[1];
+  let refNo=idAr[0];
+  var url = `http://www.cpso.on.ca/public-register/doctor-details-print.aspx?view=5&id=${id}&ref-no=${refNo}`;
   var self = this;
 
   return new Promise(function (resolve, reject) {
@@ -296,7 +155,7 @@ prot.doctorScrape = function (id) {
         return reject(err);
       }
 
-      var doc = self.doctorParse(id, body);
+      var doc = self.doctorParse(idStr, body);
       p("received doctor " + JSON.stringify(doc));
       return resolve(doc);
     })
@@ -334,157 +193,137 @@ prot.doctorParse = function (id, data) {
   console.log("Parsing id " + id);
 
   $ = cheerio.load(data);
-  var sections = $('#profile-content');
 
-  if (sections.length != 4) {
-    console.log("ERROR. sections length is not correct");
+
+  // name
+  var heading = $('#content').find('div[class=heading]');
+
+  headingH1 = heading.find('h1');
+  let headingH1Txt = headingH1 .text().trim();
+  let headingH1TxtAr = headingH1Txt.split('\r\n');
+  if (headingH1TxtAr.length == 3) {
+    let m = /^([^,]+),([^\\]+)/.exec(headingH1TxtAr[0]);
+    doctor.firstname = m[2];
+    doctor.lastname = m[1];
   }
 
-  var section1 = sections.eq(0);
-  var detailsSection1 = section1.find("div[class=detail]");
-  var section2 = sections.eq(1);
-  var detailsSection2 = section2.find("div[class=detail]");
-  var section3 = sections.eq(2);
-  var detailsSection3 = section3.find("div[class=detail]");
-  var section4 = sections.eq(3);
-  var detailsSection4 = section4.find("div[class=detail]");
-
-
-  // doctor information
-  var infoMap = {
-    "Given Name:": "firstname",
-    "Surname:": "lastname",
-    "Gender:": "gender",
-    "Language Fluency:": "language"
-  }
-  var detObj = detailsSection1.eq(0);
-  var detStr = detObj.find("p").text();
-  var detAr = detStr.split(/\s{2,}/g)
-    .filter(function (val) {
-      return val
-    }); // filter out empty vals
-  for (var i = 0; i < detAr.length; i += 2) {
-    var key = detAr[i];
-    if (infoMap[key]) {
-      doctor[infoMap[key]] = detAr[i + 1];
-    }
+  headingPAr = heading.find('div > p');
+  let registrationRow = headingPAr.eq(1).html();
+  var registrationPattern = /\s*.*>&#xA0;(.*)/
+  var matchesR = registrationPattern.exec(registrationRow);
+  if (matchesR) {
+    doctor['Registration Class'] = matchesR[1];
   }
 
-  // Primary Practice Location
-  var detObj = detailsSection1.eq(1);
-  var detStr = detObj.find("p").html();
+  var sectionSummary = $("section[data-jump-section=Summary]");
+  var sectionPracticeInfo = $("section[data-jump-section='Practice Information']");
+  var sectionSpecialties = $("section[data-jump-section=Specialties]");
+  
 
-  //detStr = detStr.replace("<br>", " ");
-  var detAr = detStr.trim().split(/\s{2,}/g).filter(function (val) {
-    return val && (val != "<br>")
-  })
-  if (detAr.length != 2) {
-    console.log("ERROR. practice location length is not correct");
+
+  // summary
+  var detailsSectionSummary = sectionSummary.find("div[class=info] > p");
+
+  // gender
+  let genderAr = detailsSectionSummary.eq(1).text().trim().split('\r\n');
+  if (genderAr.length == 2) {
+    doctor.gender = genderAr[1].trim();
   }
-  var loc = detAr[0];
-  var contacts = detAr[1];
+
+  // languages
+  let languagesAr = detailsSectionSummary.eq(2).text().trim().split('\r\n');
+  if (languagesAr.length == 2) {
+    doctor.language = languagesAr[1].trim();
+  }
+
+
   var phonePattern = /Phone:(&#xA0;)?([\+\(\)\d\-\s]+)/
   var faxPattern = /Fax:(&#xA0;)?([\+\(\)\d\-\s]+)/
-  var matchesP = phonePattern.exec(contacts);
-  if (matchesP) {
-    doctor.phone = matchesP[2];
+  var cityRowPattern = /(.*)\s+ON\s*([\w][\d][\w]\s*[\d][\w][\d])/
+
+
+  // Primary Practice Location
+  let primaryAddressAr = [];
+  var divPL = sectionPracticeInfo.find("div[class=practice-location]");
+  let addrAr = divPL.html().split("<br>");
+  for (let k in addrAr) {
+    let row = addrAr[k].trim('\r\n').trim().replace(/&#xA0;/g, ' ');
+    if (!row.length || row.startsWith("<")) {
+      continue;
+    }
+
+    var matchesP = phonePattern.exec(row);
+    var matchesF = faxPattern.exec(row);
+    var matchesC = cityRowPattern.exec(row);
+
+    if (matchesP) {
+      doctor.phone = matchesP[2];
+    } else if (matchesF) {
+      doctor.fax = matchesF[2];
+    } else {
+
+      if (matchesC) {
+        doctor.city = matchesC[1];
+        doctor.postal = matchesC[2];
+      }
+
+      primaryAddressAr.push(row);
+    }
+
   }
-  var matchesF = faxPattern.exec(contacts);
-  if (matchesF) {
-    doctor.fax = matchesF[2];
-  }
-
-  var locAr = loc.split("<br>");
-  var locLast = locAr.pop();
-  locLastAr = locLast.split("&#xA0;").filter(function (val) {
-    return val
-  }); // filter out empty vals
-
-  if (locLastAr.length != 3) {
-    console.log("ERROR. loclast length is not correct");
-  }
-  doctor.city = locLastAr[0] ? locLastAr[0] : '';
-  doctor.province = locLastAr[1] ? locLastAr[1] : '';
-  doctor.postal = locLastAr[2] ? locLastAr[2] : '';
-  doctor.address = locAr.join(", ");
+  doctor.address = primaryAddressAr.join(', ');
 
 
-  // Current Registration
-  var detObj = detailsSection1.eq(2);
-  var detStr = detObj.find("p").text();
-  var detAr = detStr.split(/\s{2,}/g)
-    .filter(function (val) {
-      return val
-    }); // filter out empty vals
-  if (detAr[0] == 'Registration Class:') {
-    doctor['Registration Class'] = detAr[1];
+  // secondary address
+  let secondaryAddressAr = [];
+  var divPL1 = sectionPracticeInfo.find("div[class='additional-practice-location collapsible']").find("div[class=practice-location]");
+  if (divPL1.children().length) {
+    let addressesAr = divPL1.html().split("<hr>");
+    if (addressesAr.length) {
+      let addr = addressesAr[0];
+      let addrAr = addr.split("<br>");
+      for (let k in addrAr) {
+        let row = addrAr[k].trim('\r\n').trim().replace(/&#xA0;/g, ' ');
+        if (!row.length || row.startsWith("<")) {
+          continue;
+        }
+
+        var matchesP = phonePattern.exec(row);
+        var matchesF = faxPattern.exec(row);
+        var matchesC = cityRowPattern.exec(row);
+
+        if (matchesP) {
+          doctor['Secondary Phone'] = matchesP[2];
+        } else if (matchesF) {
+          doctor['Secondary Fax'] = matchesF[2];
+        } else {
+
+          if (matchesC) {
+            doctor['Secondary City'] = matchesC[1];
+            doctor['Secondary Postal'] = matchesC[2];
+          }
+
+          secondaryAddressAr.push(row);
+        }
+
+      }
+
+      doctor['Secondary Address'] = secondaryAddressAr.join(', ');
+    }
   }
 
   // Specialties
-  var detObj = detailsSection1.eq(3);
-  var specialties = [];
-  detObj.find("tr").each(function (i, elem) {
-    if (i > 0) {
-      var tr = $(this).text();
-      var detAr = tr.split(/\s{2,}/g)
-        .filter(function (val) {
-          return val
-        }); // filter out empty vals
-      if (detAr.length) {
-        specialties.push(detAr[0]);
-      }
-    }
-  })
-  doctor.specialties = specialties.join(", ");
-
-  // Secondary address
-  var h2List = section2.find("h2");
-  h2 = h2List.eq(1);
-  if (h2.text().trim() == "Secondary Practice Location") {
-    var detObj = detailsSection2.eq(1);
-    var detStr = detObj.find("p").html();
-
-    if (detStr.indexOf('Canada') > -1) {
-      detStr = detStr.replace('Canada', "  ");
-    }
-
-    var detAr = detStr.trim().split(/\s{2,}/g).filter(function (val) {
-      return val && (val != "<br>")
+  let specialtiesTag = sectionSpecialties.find("table > tr");
+  let specialtiesAr = [];
+  specialtiesTag.each(function(i, elem){
+    let specAr = [];
+    $(this).find('td').each(function(j, elem1) {
+      specAr.push($(this).text().trim());
     })
-
-    if (detAr.length != 2) {
-      console.log("ERROR. practice location length is not correct");
-    }
-    var loc = detAr[0];
-    var contacts = detAr[1];
-    var phonePattern = /Phone:(&#xA0;)?([\+\(\)\d\-\s]+)/
-    var faxPattern = /Fax:(&#xA0;)?([\+\(\)\d\-\s]+)/
-    var matchesP = phonePattern.exec(contacts);
-    if (matchesP) {
-      doctor['Secondary Phone'] = matchesP[2];
-    }
-    var matchesF = faxPattern.exec(contacts);
-    if (matchesF) {
-      doctor['Secondary Fax'] = matchesF[2];
-    }
-
-    var locAr = loc.split("<br>").filter(function (val) {
-      return val && (val != "<br>")
-    });
-
-    var locLast = locAr.pop();
-    locLastAr = locLast.split("&#xA0;").filter(function (val) {
-      return val
-    }); // filter out empty vals
-
-    if (locLastAr.length != 3) {
-      console.log("ERROR. loclast length is not correct");
-    }
-    doctor['Secondary City'] = locLastAr[0] ? locLastAr[0] : '';
-    doctor['Secondary Province'] = locLastAr[1] ? locLastAr[1] : '';
-    doctor['Secondary Postal'] = locLastAr[2] ? locLastAr[2] : '';
-    doctor['Secondary Address'] = locAr.join(", ");
-  }
+    specialtiesAr.push(specAr.join(", "));
+    //specialtiesAr.push($(this).find('td').eq(0).text());
+  })
+  doctor.specialties = specialtiesAr.join(", ");
 
   return doctor;
 }
@@ -511,7 +350,9 @@ prot.receivedIdsHandler = function (ids) {
 prot.resultHandler = function (err, httpResponse, body) {
   var self = this;
   var idDoctorAr = [];
-  var idPattern = /id=(%?[\d]+)$/;
+  //var idPattern = /id=(%?[\d]+)$/;
+  // http://www.cpso.on.ca/DoctorDetails/Ryan-Francis-Aalders/0295403-103559
+  var idPattern = /([\d]+\-[\d]+)$/;
   if (err) {
     console.log(err);
     return;
@@ -528,7 +369,8 @@ prot.resultHandler = function (err, httpResponse, body) {
     }
   });
 
-  var nextButton = $('#p_lt_ctl03_pageplaceholder_p_lt_ctl03_CPSO_DoctorSearchResults_lnkNext');
+  var nextButton = $('#p_lt_ctl04_pageplaceholder_p_lt_ctl03_CPSO_DoctorSearchResults_lnkNext');
+
   if (nextButton.length) {
     //idDoctorAr = idDoctorAr.concat(self.getPage(self.resultHandler, body));
     self.getPage(self.resultHandler, body)
@@ -538,7 +380,8 @@ prot.resultHandler = function (err, httpResponse, body) {
 }
 
 prot.loadForm = function (callback) {
-  var url = "http://www.cpso.on.ca/Public-Register/All-Doctors-Search";
+  //var url = "http://www.cpso.on.ca/Public-Register/All-Doctors-Search";
+  var url = "http://www.cpso.on.ca/Public-Information-Services/Find-a-Doctor";
   var self = this;
   console.log("loading form...");
   return request(url, function (err, response, body) {
@@ -568,33 +411,41 @@ prot.getPage = function (callback, body, params, isFirstPage) {
   isFirstPage = isFirstPage || false;
 
   var payload = {
-    "__EVENTTARGET": "p$lt$ctl03$pageplaceholder$p$lt$ctl03$CPSO_DoctorSearchResults$lnkNext",
-    'Referer': 'http://www.cpso.on.ca/Public-Register-Info-(1)/Doctor-Search-Results'
+    "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$btnSubmit": "Submit"
+
+    //"__EVENTTARGET": "p$lt$ctl04$pageplaceholder$p$lt$ctl04$CPSO_DoctorSearchResults$lnkNext",
+    //'Referer': 'http://www.cpso.on.ca/Public-Register-Info-(1)/Doctor-Search-Results'
   };
 
   var url = "http://www.cpso.on.ca/Public-Register-Info-(1)/Doctor-Search-Results";
 
   if (isFirstPage && params) {
-    url = "http://www.cpso.on.ca/Public-Register/All-Doctors-Search";
+    //url = "http://www.cpso.on.ca/Public-Register/All-Doctors-Search";
+    url="http://www.cpso.on.ca/Public-Information-Services/Find-a-Doctor";
 
     payload = _.extend(payload, {
-      "p$lt$ctl03$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$txtLastName": "",
-      "p$lt$ctl03$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$grpGender": " ",
-      "p$lt$ctl03$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddLanguage": "08",
+      "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$txtLastName": "",
+      "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$grpGender": " ",
+      "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddLanguage": "08",
 
-      //"p$lt$ctl03$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddCity": 1965,
-      "p$lt$ctl03$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$grpDocType": "rdoDocTypeSpecialist",
-      //"p$lt$ctl03$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddSpecialist": 219,
-      "p$lt$ctl03$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddSpecialist": params.spec || 219,
-      "p$lt$ctl03$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$grpStatus": "rdoStatusActive",
-      "p$lt$ctl03$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddCity": (!params.postal && params.city ? params.city : "Select -->"),
-      "p$lt$ctl03$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$txtPostalCode": params.postal || '',
+      //"p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddCity": 1965,
+      "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$grpDocType": "rdoDocTypeSpecialist",
+      //"p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddSpecialist": 219,
+      "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddSpecialist": params.spec || 219,
+      "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$grpStatus": "rdoStatusActive",
+      "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddCity": (!params.postal && params.city ? params.city : "Select -->"),
+      "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$txtPostalCode": params.postal || '',
 
-      "p$lt$ctl03$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddHospitalCity": "Select -->",
-      "p$lt$ctl03$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddHospitalName": -1,
+      "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddHospitalCity": "Select -->",
+      "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddHospitalName": -1,
 
-      __EVENTTARGET: "p$lt$ctl03$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$btnSubmit",
-      Referer: 'http://www.cpso.on.ca/Public-Register/All-Doctors-Search'
+      //__EVENTTARGET: "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$btnSubmit",
+      //Referer: 'http://www.cpso.on.ca/Public-Register/All-Doctors-Search'
+      //Referer: 'http://www.cpso.on.ca/Public-Information-Services/Find-a-Doctor'
+    })
+  } else {
+    payload = _.extend(payload, {
+      __EVENTTARGET: "p$lt$ctl04$pageplaceholder$p$lt$ctl03$CPSO_DoctorSearchResults$lnkNext",
     })
   }
 
@@ -619,7 +470,9 @@ prot.getPage = function (callback, body, params, isFirstPage) {
     "__VIEWSTATEGENERATOR": vsgenerator,
     "__SCROLLPOSITIONX": 0,
     "__SCROLLPOSITIONY": 0,
-    "p$lt$ctl00$SearchBox$txtWord": "Site Search",
+    //"p$lt$ctl01$SearchBox$txtWord": "Site Search",
+    "p$lt$ctl01$SearchBox$txtWord": "",
+    "p$lt$ctl01$SearchBox$txtWord_exWatermark_ClientState":"",
     "__VIEWSTATE": viewstate
   });
 
@@ -640,14 +493,19 @@ prot.getPage = function (callback, body, params, isFirstPage) {
     }
   };
 
-  // if (!isFirstPage) {
-  //   options.proxy = "http://127.0.0.1:8081";
+  // if (isFirstPage) {
+  //   options.proxy = "http://127.0.0.1:8080";
   // }
 
   request.post(options, function (err, httpResponse, body) {
     callback.call(self, err, httpResponse, body)
   });
 }
+
+
+
+
+
 
 prot.getNextPage = function (body, callback) {
   var self = this;
@@ -666,13 +524,13 @@ prot.getNextPage = function (body, callback) {
   var payload = {
     "manScript_HiddenField": "",
     "__CMSCsrfToken": token,
-    "__EVENTTARGET": "p$lt$ctl03$pageplaceholder$p$lt$ctl03$CPSO_DoctorSearchResults$lnkNext",
+    "__EVENTTARGET": "p$lt$ctl04$pageplaceholder$p$lt$ctl04$CPSO_DoctorSearchResults$lnkNext",
     "__EVENTARGUMENT": "",
     "lng": "en-CA",
     "__VIEWSTATEGENERATOR": vsgenerator,
     "__SCROLLPOSITIONX": 0,
     "__SCROLLPOSITIONY": 0,
-    "p$lt$ctl00$SearchBox$txtWord": "Site Search",
+    "p$lt$ctl01$SearchBox$txtWord": "Site Search",
     "__VIEWSTATE": viewstate
   }
 
@@ -723,26 +581,26 @@ prot.getFirstPage = function (params, body, callback) {
 
   var payload = {
     "manScript_HiddenField": "",
-    "p$lt$ctl03$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$txtLastName": "",
-    "p$lt$ctl03$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$grpGender": " ",
-    "p$lt$ctl03$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddLanguage": "08",
+    "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$txtLastName": "",
+    "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$grpGender": " ",
+    "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddLanguage": "08",
 
-    //"p$lt$ctl03$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddCity": 1965,
-    "p$lt$ctl03$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$grpDocType": "rdoDocTypeSpecialist",
-    "p$lt$ctl03$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddSpecialist": 134,
-    "p$lt$ctl03$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$grpStatus": "rdoStatusActive",
-    "p$lt$ctl03$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddCity": "Select -->",
-    "p$lt$ctl03$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$txtPostalCode": "",
-    "p$lt$ctl03$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddHospitalCity": "Select -->",
-    "p$lt$ctl03$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddHospitalName": -1,
+    //"p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddCity": 1965,
+    "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$grpDocType": "rdoDocTypeSpecialist",
+    "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddSpecialist": 134,
+    "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$grpStatus": "rdoStatusActive",
+    "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddCity": "Select -->",
+    "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$txtPostalCode": "",
+    "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddHospitalCity": "Select -->",
+    "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddHospitalName": -1,
 
     "__VIEWSTATE": viewstate,
     "__VIEWSTATEGENERATOR": vsgenerator,
     "__CMSCsrfToken": token,
 
-    "__EVENTTARGET": "p$lt$ctl03$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$btnSubmit",
+    "__EVENTTARGET": "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$btnSubmit",
     "lng": "en-CA",
-    "p$lt$ctl00$SearchBox$txtWord": "Site Search",
+    "p$lt$ctl01$SearchBox$txtWord": "Site Search",
     "__EVENTARGUMENT": "",
     "__SCROLLPOSITIONX": 0,
     "__SCROLLPOSITIONY": 0,
@@ -750,7 +608,8 @@ prot.getFirstPage = function (params, body, callback) {
   }
 
   request.post({
-    url: "http://www.cpso.on.ca/Public-Register/All-Doctors-Search",
+    //url: "http://www.cpso.on.ca/Public-Register/All-Doctors-Search",
+    url: "http://www.cpso.on.ca/Public-Information-Services/Find-a-Doctor",
     form: payload,
     //proxy:"http://127.0.0.1:8080",
     followAllRedirects: true,
@@ -760,7 +619,8 @@ prot.getFirstPage = function (params, body, callback) {
       'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
       'Accept-Language': 'en-US,en;q=0.5',
       'Content-Type': 'application/x-www-form-urlencoded',
-      'Referer': 'http://www.cpso.on.ca/Public-Register/All-Doctors-Search',
+      //'Referer': 'http://www.cpso.on.ca/Public-Register/All-Doctors-Search',
+      'Referer': 'http://www.cpso.on.ca/Public-Information-Services/Find-a-Doctor',
       "Cookie": self.cookies,
       'Connection': 'close',
       'Upgrade-Insecure-Requests': 1,
