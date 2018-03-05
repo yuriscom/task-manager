@@ -407,7 +407,7 @@ prot.getNextButtonParams = function ($) {
   }
 
   let pagObj = $('.doctor-search-paging a[class=active]').next().get(0);
-  if (!pagObj.attribs || !pagObj.attribs.id) {
+  if (!pagObj || !pagObj.attribs || !pagObj.attribs.id) {
     return nextParams;
   }
 
@@ -484,7 +484,7 @@ prot.getPage = function (callback, body, params, isFirstPage) {
       "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$ConcernsState": "closed",
       "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$txtCPSONumber": "",
       "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$txtLastNameQuick": "",
-      "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$ddSpecialist": 200,
+      "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$ddSpecialist": params.spec || 219,
 
 
       "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$txtLastName": "",
@@ -494,7 +494,7 @@ prot.getPage = function (callback, body, params, isFirstPage) {
       //"p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddCity": 1965,
       "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$grpDocType": "rdoDocTypeSpecialist",
       //"p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddSpecialist": 219,
-      "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddSpecialist": params.spec || 219,
+
       "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$chkActiveDoctors": "on",
       "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$chkPracticeRestrictions": "on",
       "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$chkPendingHearings": "on",
