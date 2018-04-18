@@ -484,7 +484,7 @@ prot.getPage = function (callback, body, params, isFirstPage) {
       "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$ConcernsState": "closed",
       "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$txtCPSONumber": "",
       "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$txtLastNameQuick": "",
-      "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$ddSpecialist": params.spec || 219,
+
 
 
       "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$txtLastName": "",
@@ -506,10 +506,6 @@ prot.getPage = function (callback, body, params, isFirstPage) {
       "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$btnSubmit1": "",
       //"p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$grpStatus": "rdoStatusActive",
 
-
-      "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$ddCity": (!params.postal && params.city ? params.city : "Select -->"),
-      "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$txtPostalCode": params.postal || '',
-
       "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$ddHospitalCity": "",
       "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$ddHospitalName": -1,
 
@@ -517,6 +513,21 @@ prot.getPage = function (callback, body, params, isFirstPage) {
       //Referer: 'http://www.cpso.on.ca/Public-Register/All-Doctors-Search'
       //Referer: 'http://www.cpso.on.ca/Public-Information-Services/Find-a-Doctor'
     })
+
+    if (params.spec) {
+      payload["p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$ddSpecialist"] = params.spec;
+    }
+
+    payload["p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$ddCity"] = "";
+    payload["p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$txtPostalCode"] = "";
+
+    if (params.city) {
+      payload["p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$ddCity"] = params.city;
+    } else if (params.postal) {
+      payload["p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$txtPostalCode"] = params.postal;
+    }
+
+
   } else if (params) {
     payload = _.extend(payload, params);
   } else {
@@ -662,7 +673,7 @@ prot.getFirstPage = function (params, body, callback) {
     "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddSpecialist": 134,
     "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$grpStatus": "rdoStatusActive",
     "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddCity": "Select -->",
-    "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$txtPostalCode": "",
+    "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$txtPostalCode": "",
     "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddHospitalCity": "Select -->",
     "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddHospitalName": -1,
 

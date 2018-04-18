@@ -72,7 +72,7 @@ app.get('/getfile', function(req, res){
   //res.end(new Buffer(data, 'binary'));
 })
 
-var port = isLocal ? 3000 : 80;
+var port = isLocal ? 4000 : 80;
 app.listen(port, function () {
   console.log('Start Application Service');
 });
