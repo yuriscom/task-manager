@@ -368,7 +368,7 @@ prot.resultHandler = function (err, httpResponse, body) {
   }
 
   $ = cheerio.load(body);
-  $('article[class=doctor-search-results--result] h3 a').each(function (i, elem) {
+  $('article h3 a').each(function (i, elem) {
 
     var href = $(this).attr('href');
     var matches = idPattern.exec(href);
@@ -402,7 +402,7 @@ prot.getNextButtonParams = function ($) {
   if (isNextChunkAvailable) {
     nextParams = {
       __EVENTTARGET: nextChunkLink,
-      "p_lt_ctl04_pageplaceholder_p_lt_ctl03_CPSO_DoctorSearchResults_hdnCurrentPage": curPage
+      "p$lt$ctl04$pageplaceholder$p$lt$ctl03$CPSO_DoctorSearchResults$hdnCurrentPage": curPage
     };
   }
 
@@ -456,9 +456,16 @@ prot.loadForm = function (callback) {
 }
 
 
+// START HERE
 prot.getPage = function (callback, body, params, isFirstPage) {
   var self = this;
   isFirstPage = isFirstPage || false;
+
+  var msPattern = /id="manScript_HiddenField" value="([^"]+)" \/>/g;
+  var matches = msPattern.exec(body);
+  //var mscript = matches[1];
+  var mscript = ";;AjaxControlToolkit,+Version=4.1.60919.0,+Culture=neutral,+PublicKeyToken=28f01b0e84b6d53e:en-US:ee051b62-9cd6-49a5-87bb-93c07bc43d63:475a4ef5:effe2a26:7e63a579";
+
 
   var payload = {
 
@@ -466,15 +473,16 @@ prot.getPage = function (callback, body, params, isFirstPage) {
     //'Referer': 'http://www.cpso.on.ca/Public-Register-Info-(1)/Doctor-Search-Results'
   };
 
-  var url = "http://www.cpso.on.ca/Public-Register-Info-(1)/Doctor-Search-Results";
+  var url = "https://www.cpso.on.ca/Public-Register-Info-(1)/Doctor-Search-Results";
 
   if (isFirstPage && params) {
-    //url = "http://www.cpso.on.ca/Public-Register/All-Doctors-Search";
-    url = "http://www.cpso.on.ca/Public-Information-Services/Find-a-Doctor";
+    url = "https://www.cpso.on.ca/Public-Register/All-Doctors-Search?refine=true&search=general";
 
     payload = _.extend(payload, {
-      "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$btnSubmit": "Submit",
+      //"p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$btnSubmit": "Submit",
 
+      "__EVENTTARGET": "",
+      "__LASTFOCUS":"",
       "searchType": "general",
       "p$lt$ctl01$SearchBox$txtWord": "",
       "p$lt$ctl01$SearchBox$txtWord_exWatermark_ClientState": "",
@@ -503,7 +511,7 @@ prot.getPage = function (callback, body, params, isFirstPage) {
       "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$chkConcerns": "on",
       "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$chkNotices": "on",
       "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$txtExtraInfo": "",
-      "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$btnSubmit1": "",
+      "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$btnSubmit1": "Submit",
       //"p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$grpStatus": "rdoStatusActive",
 
       "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$ddHospitalCity": "",
@@ -550,7 +558,7 @@ prot.getPage = function (callback, body, params, isFirstPage) {
 
 
   payload = _.extend(payload, {
-    "manScript_HiddenField": "",
+    "manScript_HiddenField": mscript,
     "__CMSCsrfToken": token,
     "__EVENTARGUMENT": "",
     "lng": "en-CA",
@@ -564,13 +572,13 @@ prot.getPage = function (callback, body, params, isFirstPage) {
   });
 
   var options = {
-    url: url,
+    url: `${url}`,
     form: payload,
     //proxy:"http://127.0.0.1:8080",
     followAllRedirects: true,
     headers: {
       'Host': 'www.cpso.on.ca',
-      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:53.0) Gecko/20100101 Firefox/53.0',
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.13; rv:60.0) Gecko/20100101 Firefox/60.0',
       'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
       'Accept-Language': 'en-US,en;q=0.5',
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -580,61 +588,18 @@ prot.getPage = function (callback, body, params, isFirstPage) {
     }
   };
 
-  // if (isFirstPage) {
+  // if (!isFirstPage) {
   //   options.proxy = "http://127.0.0.1:8080";
   // }
 
+  console.log("loading next page...");
   request.post(options, function (err, httpResponse, body) {
+    console.log("Done.");
     callback.call(self, err, httpResponse, body)
   });
 }
 
 
-prot.getNextPage = function (body, callback) {
-  var self = this;
-  var vsPattern = /id="__VIEWSTATE" value="([^"]+)" \/>/g;
-  var matches = vsPattern.exec(body);
-  var viewstate = matches[1];
-
-  var tokenPattern = /id="__CMSCsrfToken" value="([^"]+)" \/>/g;
-  var matches = tokenPattern.exec(body);
-  var token = matches[1];
-
-  var sgPattern = /id="__VIEWSTATEGENERATOR" value="([^"]+)" \/>/g
-  var matches = sgPattern.exec(body);
-  var vsgenerator = matches[1];
-
-  var payload = {
-    "manScript_HiddenField": "",
-    "__CMSCsrfToken": token,
-    "__EVENTTARGET": "p$lt$ctl04$pageplaceholder$p$lt$ctl04$CPSO_DoctorSearchResults$lnkNext",
-    "__EVENTARGUMENT": "",
-    "lng": "en-CA",
-    "__VIEWSTATEGENERATOR": vsgenerator,
-    "__SCROLLPOSITIONX": 0,
-    "__SCROLLPOSITIONY": 0,
-    "p$lt$ctl01$SearchBox$txtWord": "Site Search",
-    "__VIEWSTATE": viewstate
-  }
-
-  request.post({
-    url: "http://www.cpso.on.ca/Public-Register-Info-(1)/Doctor-Search-Results",
-    form: payload,
-    //proxy:"http://127.0.0.1:8080",
-    followAllRedirects: true,
-    headers: {
-      'Host': 'www.cpso.on.ca',
-      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:53.0) Gecko/20100101 Firefox/53.0',
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-      'Accept-Language': 'en-US,en;q=0.5',
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Referer': 'http://www.cpso.on.ca/Public-Register-Info-(1)/Doctor-Search-Results',
-      "Cookie": self.cookies,
-      'Connection': 'close',
-      'Upgrade-Insecure-Requests': 1,
-    }
-  }, callback);
-}
 
 
 prot.getFilename = function () {
@@ -644,70 +609,4 @@ prot.getFilename = function () {
   return 'data_spec' + spec + '_city' + city + '_postal' + postal + '.xlsx';
 }
 
-prot.getFirstPage = function (params, body, callback) {
 
-  var self = this;
-  params.ddSpecialist = 134;
-
-
-  var vsPattern = /id="__VIEWSTATE" value="([^"]+)" \/>/g;
-  var matches = vsPattern.exec(body);
-  var viewstate = matches[1];
-
-  var tokenPattern = /id="__CMSCsrfToken" value="([^"]+)" \/>/g;
-  var matches = tokenPattern.exec(body);
-  var token = matches[1];
-
-  var sgPattern = /id="__VIEWSTATEGENERATOR" value="([^"]+)" \/>/g
-  var matches = sgPattern.exec(body);
-  var vsgenerator = matches[1];
-
-  var payload = {
-    "manScript_HiddenField": "",
-    "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$txtLastName": "",
-    "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$grpGender": " ",
-    "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddLanguage": "08",
-
-    //"p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddCity": 1965,
-    "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$grpDocType": "rdoDocTypeSpecialist",
-    "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddSpecialist": 134,
-    "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$grpStatus": "rdoStatusActive",
-    "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddCity": "Select -->",
-    "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$txtPostalCode": "",
-    "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddHospitalCity": "Select -->",
-    "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddHospitalName": -1,
-
-    "__VIEWSTATE": viewstate,
-    "__VIEWSTATEGENERATOR": vsgenerator,
-    "__CMSCsrfToken": token,
-
-    "__EVENTTARGET": "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$btnSubmit",
-    "lng": "en-CA",
-    "p$lt$ctl01$SearchBox$txtWord": "Site Search",
-    "__EVENTARGUMENT": "",
-    "__SCROLLPOSITIONX": 0,
-    "__SCROLLPOSITIONY": 0,
-    "__LASTFOCUS": "",
-  }
-
-  request.post({
-    //url: "http://www.cpso.on.ca/Public-Register/All-Doctors-Search",
-    url: "http://www.cpso.on.ca/Public-Information-Services/Find-a-Doctor",
-    form: payload,
-    //proxy:"http://127.0.0.1:8080",
-    followAllRedirects: true,
-    headers: {
-      'Host': 'www.cpso.on.ca',
-      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:53.0) Gecko/20100101 Firefox/53.0',
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-      'Accept-Language': 'en-US,en;q=0.5',
-      'Content-Type': 'application/x-www-form-urlencoded',
-      //'Referer': 'http://www.cpso.on.ca/Public-Register/All-Doctors-Search',
-      'Referer': 'http://www.cpso.on.ca/Public-Information-Services/Find-a-Doctor',
-      "Cookie": self.cookies,
-      'Connection': 'close',
-      'Upgrade-Insecure-Requests': 1,
-    }
-  }, callback);
-
-}
