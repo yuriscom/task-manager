@@ -475,6 +475,7 @@ prot.getPage = function (callback, body, params, isFirstPage) {
 
   var url = "https://www.cpso.on.ca/Public-Register-Info-(1)/Doctor-Search-Results";
 
+
   if (isFirstPage && params) {
     url = "https://www.cpso.on.ca/Public-Register/All-Doctors-Search?refine=true&search=general";
 
@@ -500,7 +501,7 @@ prot.getPage = function (callback, body, params, isFirstPage) {
       "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$ddLanguage": "08",
 
       //"p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddCity": 1965,
-      "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$grpDocType": "rdoDocTypeSpecialist",
+      "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$grpDocType": params.spec == "001" ? "rdoDocTypeAll" : "rdoDocTypeSpecialist",
       //"p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddSpecialist": 219,
 
       "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$chkActiveDoctors": "on",
