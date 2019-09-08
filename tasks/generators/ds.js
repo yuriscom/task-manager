@@ -14,7 +14,6 @@ function errandshutdown(err) {
   p(JSON.stringify(err.stack));
 }
 
-
 var stripTagsGentle = function (str) {
   return str.replace(/<\/?[^>]+>/g, '');
 }
@@ -147,10 +146,13 @@ prot.doctorScrape = function (idStr) {
   //idStr = '0139540-74173';
   //idStr = '0288931-100187';
 
-  let idAr = idStr.split('-');
-  let id = idAr[1];
-  let refNo = idAr[0];
-  var url = `http://www.cpso.on.ca/public-register/doctor-details-print.aspx?view=5&id=${id}&ref-no=${refNo}`;
+  // let idAr = idStr.split('-');
+  // let id = idAr[1];
+  // let refNo = idAr[0];
+
+  // https://doctors.cpso.on.ca/DoctorDetails/Benjamin-Barankin/0181819-78418
+  var url = `https://doctors.cpso.on.ca/DoctorDetails/some-bullshit/${idStr}`;
+  // var url = `http://www.cpso.on.ca/public-register/doctor-details-print.aspx?view=5&id=${id}&ref-no=${refNo}`;
   var self = this;
 
   return new Promise(function (resolve, reject) {
@@ -201,59 +203,47 @@ prot.doctorParse = function (id, data) {
 
 
   // name
-  var heading = $('#content div[class=heading]');
-
-  headingH1 = heading.find('h1');
-  let headingH1Txt = headingH1.text().trim();
-  let headingH1TxtAr = headingH1Txt.split(/\r?\n/);
-  if (headingH1TxtAr.length == 3) {
-    let m = /^([^,]+),([^\\]+)/.exec(headingH1TxtAr[0]);
-    doctor.firstname = m[2].trim();
-    doctor.lastname = m[1].trim();
+  let docTitleTxt = $('#docTitle').text().trim();
+  let docTitleTxtAr = docTitleTxt.split(",");
+  if (docTitleTxtAr.length == 2) {
+    doctor.firstname = docTitleTxtAr[1].trim();
+    doctor.lastname = docTitleTxtAr[0].trim();
   }
 
-  headingPAr = heading.find('div > p');
-  let registrationRow = headingPAr.eq(1).html();
-  var registrationPattern = /\s*.*>&#xA0;(.*)/
-  var matchesR = registrationPattern.exec(registrationRow);
-  if (matchesR) {
-    doctor['Registration Class'] = matchesR[1];
+
+  // registration class
+  let doctorInfoList = $(".doctor-details-heading > div.doctor-info");
+  if (doctorInfoList.length) {
+    let regClassText = doctorInfoList.eq(doctorInfoList.length - 1).find("div").eq(1).text().trim();
+    doctor['Registration Class'] = regClassText.replace(/\r\n/g, "").replace(/\s{1,}/g," ");
   }
 
-  var sectionSummary = $("section[data-jump-section=Summary]");
-  var sectionPracticeInfo = $("section[data-jump-section='Practice Information']");
-  var sectionSpecialties = $("section[data-jump-section=Specialties]");
 
 
-  // summary
-  var detailsSectionSummary = sectionSummary.find("div[class=info] > p");
+  // var sectionSummary = $("section[data-jump-section=Summary]");
+  var sectionSummary = $("section#summary");
+  var sectionPracticeInfo = $("section#practice_info");
+  var sectionSpecialties = $("section#specialties");
+
 
   // gender
-  let genderAr = detailsSectionSummary.eq(1).text().trim().split(/\r?\n/);
-  if (genderAr.length == 2) {
-    doctor.gender = genderAr[1].trim();
-  }
+  doctor.gender = sectionSummary.find("p").eq(1).text().trim().replace(/gender:(\r\n)?/i, "").trim();
 
   // languages
-  let languagesAr = detailsSectionSummary.eq(2).text().trim().split(/\r?\n/);
-  if (languagesAr.length == 2) {
-    doctor.language = languagesAr[1].trim();
-  }
+  doctor.language = sectionSummary.find("p").eq(2).text().trim().replace(/languages spoken:(\r\n)?/i, "").trim();
 
-
-  var phonePattern = /Phone:(&#xA0;|&nbsp;)?([\+\(\)\d\-\s]+)/
+  // Primary Practice Location
+  var phonePattern = /Phone(\sNumber)?\s?:(&#xA0;|&nbsp;)?([\+\(\)\d\-\s]+)/
   var faxPattern = /Fax:(&#xA0;|&nbsp;)?([\+\(\)\d\-\s]+)/
   var cityRowPattern = /(.*)\s+ON\s*([\w][\d][\w]\s*[\d][\w][\d])/
 
 
-  // Primary Practice Location
   let primaryAddressAr = [];
-  var divPL = sectionPracticeInfo.find("div[class=practice-location]");
-  let addrAr = divPL.html().split("<br>");
-  for (let k in addrAr) {
-    let row = addrAr[k].trim(/\r?\n/).trim().replace(/&#xA0;/g, ' ');
-    //if (!row.length || row.startsWith("<")) {
-    if (!row.length || k == 0) {
+  let locationDetailsAr = sectionPracticeInfo.find("div.location_details").html().split("<br>");
+  for (let k in locationDetailsAr) {
+    let row = locationDetailsAr[k].trim(/\r?\n/).trim().replace(/&#xA0;/g, ' ');
+
+    if (!row.length) {
       continue;
     }
 
@@ -264,9 +254,9 @@ prot.doctorParse = function (id, data) {
     var matchesC = cityRowPattern.exec(row);
 
     if (matchesP) {
-      doctor.phone = matchesP[2];
+      doctor.phone = matchesP[3].trim();
     } else if (matchesF) {
-      doctor.fax = matchesF[2];
+      doctor.fax = matchesF[2].trim();
     } else {
 
       if (matchesC) {
@@ -276,23 +266,40 @@ prot.doctorParse = function (id, data) {
 
       primaryAddressAr.push(row);
     }
+    let sss = "sd";
 
   }
   doctor.address = primaryAddressAr.join(', ');
 
 
   // secondary address
+  let addPattern = /Business Address\s?:/
   let secondaryAddressAr = [];
-  var divPL1 = sectionPracticeInfo.find("div[class='additional-practice-location collapsible']").find("div[class=practice-location]");
+    var divPL1 = sectionPracticeInfo.find("div[class='additional-practice-location collapsible']").find("#professionalcorporationinfo");
   if (divPL1.children().length) {
+    let isOn = false;
     let addressesAr = divPL1.html().split("<hr>");
     if (addressesAr.length) {
       let addr = addressesAr[0];
       let addrAr = addr.split("<br>");
       for (let k in addrAr) {
         let row = addrAr[k].trim(/\r?\n/).trim().replace(/&#xA0;/g, ' ');
-        if (!row.length || k == 0) {
+
+        if (!isOn) {
+          if (addPattern.exec(row)) {
+            isOn = true;
+            continue;
+          }
           continue;
+        }
+
+        if (!row.length) {
+          continue;
+        }
+
+        if (addPattern.exec(row)) {
+          // again, not needed;
+          break;
         }
 
         row = stripTagsGentle(row);
@@ -302,7 +309,7 @@ prot.doctorParse = function (id, data) {
         var matchesC = cityRowPattern.exec(row);
 
         if (matchesP) {
-          doctor['Secondary Phone'] = matchesP[2];
+          doctor['Secondary Phone'] = matchesP[3];
         } else if (matchesF) {
           doctor['Secondary Fax'] = matchesF[2];
         } else {
@@ -326,6 +333,7 @@ prot.doctorParse = function (id, data) {
   let specialtiesAr = [];
   specialtiesTag.each(function (i, elem) {
     let specAr = [];
+    //$(this).find('td').eq(0).text()
     $(this).find('td').each(function (j, elem1) {
       specAr.push($(this).text().trim());
     })
@@ -360,7 +368,7 @@ prot.resultHandler = function (err, httpResponse, body) {
   var self = this;
   var idDoctorAr = [];
   //var idPattern = /id=(%?[\d]+)$/;
-  // http://www.cpso.on.ca/DoctorDetails/Ryan-Francis-Aalders/0295403-103559
+  // http://www.cpso.on.ca/DoctorDetails/Adam-Paul/0021198-25986
   var idPattern = /([\d]+\-[\d]+)$/;
   if (err) {
     console.log(err);
@@ -392,17 +400,22 @@ prot.resultHandler = function (err, httpResponse, body) {
 }
 
 prot.getNextButtonParams = function ($) {
-  let reg = /p_lt_ctl04_pageplaceholder_p_lt_ctl03_CPSO_DoctorSearchResults_rptPages_ctl([\d]+)_lnbPage/;
+  let reg = /p_lt_ctl01_pageplaceholder_p_lt_ctl03_CPSO_DoctorSearchResults_rptPages_ctl([\d]+)_lnbPage/;
 
   let isNextChunkAvailable = ($('.doctor-search-paging a[class=next]').length > 0);
-  nextChunkLink = 'p$lt$ctl04$pageplaceholder$p$lt$ctl03$CPSO_DoctorSearchResults$lnbNextGroup';
-  let curPage = $('#p_lt_ctl04_pageplaceholder_p_lt_ctl03_CPSO_DoctorSearchResults_hdnCurrentPage').val();
+  nextChunkLink = 'p$lt$ctl01$pageplaceholder$p$lt$ctl03$CPSO_DoctorSearchResults$lnbNextGroup';
+  let curPage = $('#p_lt_ctl01_pageplaceholder_p_lt_ctl03_CPSO_DoctorSearchResults_hdnCurrentPage').val();
 
   let nextParams = null;
+
+  //DEBUG
+  //return nextParams;
+
+
   if (isNextChunkAvailable) {
     nextParams = {
       __EVENTTARGET: nextChunkLink,
-      "p$lt$ctl04$pageplaceholder$p$lt$ctl03$CPSO_DoctorSearchResults$hdnCurrentPage": curPage
+      "p$lt$ctl01$pageplaceholder$p$lt$ctl03$CPSO_DoctorSearchResults$hdnCurrentPage": curPage
     };
   }
 
@@ -421,17 +434,22 @@ prot.getNextButtonParams = function ($) {
   }
 
   let num = match[1];
-  let nextLink = `p$lt$ctl04$pageplaceholder$p$lt$ctl03$CPSO_DoctorSearchResults$rptPages$ctl${num}$lnbPage`;
+  // let nextLink = `p$lt$ctl01$pageplaceholder$p$lt$ctl03$CPSO_DoctorSearchResults$rptPages$ctl${curPage.padStart(2, '0')}$lnbPage`;
+  let nextLink = `p$lt$ctl01$pageplaceholder$p$lt$ctl03$CPSO_DoctorSearchResults$rptPages$ctl${num}$lnbPage`;
 
+
+  //p$lt$ctl01$pageplaceholder$p$lt$ctl03$CPSO_DoctorSearchResults$hdnCurrentPage
+  //p$lt$ctl01$pageplaceholder$p$lt$ctl03$CPSO_DoctorSearchResults$rptPages$ctl00$lnbPage
   return {
     __EVENTTARGET: nextLink,
-    "p_lt_ctl04_pageplaceholder_p_lt_ctl03_CPSO_DoctorSearchResults_hdnCurrentPage": curPage
+    "p$lt$ctl01$pageplaceholder$p$lt$ctl03$CPSO_DoctorSearchResults$hdnCurrentPage": curPage
   };
 }
 
 prot.loadForm = function (callback) {
   //var url = "http://www.cpso.on.ca/Public-Register/All-Doctors-Search";
-  var url = "http://www.cpso.on.ca/Public-Information-Services/Find-a-Doctor";
+  // var url = "http://www.cpso.on.ca/Public-Information-Services/Find-a-Doctor";
+  var url = "https://doctors.cpso.on.ca?search=general";
   var self = this;
   console.log("loading form...");
   return request(url, function (err, response, body) {
@@ -466,6 +484,10 @@ prot.getPage = function (callback, body, params, isFirstPage) {
   //var mscript = matches[1];
   var mscript = ";;AjaxControlToolkit,+Version=4.1.60919.0,+Culture=neutral,+PublicKeyToken=28f01b0e84b6d53e:en-US:ee051b62-9cd6-49a5-87bb-93c07bc43d63:475a4ef5:effe2a26:7e63a579";
 
+  let cityVar = "p$lt$ctl01$pageplaceholder$p$lt$ctl02$CPSO_AllDoctorsSearch$ddCity";
+  let typeVar = "p$lt$ctl01$pageplaceholder$p$lt$ctl02$CPSO_AllDoctorsSearch$grpDocType";
+  let specVar = "p$lt$ctl01$pageplaceholder$p$lt$ctl02$CPSO_AllDoctorsSearch$ddSpecialist";
+  let postalVar = "p$lt$ctl01$pageplaceholder$p$lt$ctl02$CPSO_AllDoctorsSearch$txtPostalCode";
 
   var payload = {
 
@@ -473,67 +495,56 @@ prot.getPage = function (callback, body, params, isFirstPage) {
     //'Referer': 'http://www.cpso.on.ca/Public-Register-Info-(1)/Doctor-Search-Results'
   };
 
-  var url = "https://www.cpso.on.ca/Public-Register-Info-(1)/Doctor-Search-Results";
+  // var url = "https://www.cpso.on.ca/Public-Register-Info-(1)/Doctor-Search-Results";
 
+  var url = "https://doctors.cpso.on.ca/RootNewSite/New-Find-a-Doctor/Doctor-Search-Results?type=name&term=";
 
   if (isFirstPage && params) {
-    url = "https://www.cpso.on.ca/Public-Register/All-Doctors-Search?refine=true&search=general";
+    url = "https://doctors.cpso.on.ca?search=general";
 
     payload = _.extend(payload, {
-      //"p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$btnSubmit": "Submit",
-
       "__EVENTTARGET": "",
       "__LASTFOCUS":"",
       "searchType": "general",
-      "p$lt$ctl01$SearchBox$txtWord": "",
-      "p$lt$ctl01$SearchBox$txtWord_exWatermark_ClientState": "",
 
+      "p$lt$ctl01$pageplaceholder$p$lt$ctl02$CPSO_AllDoctorsSearch$advancedState":"closed",
+      "p$lt$ctl01$pageplaceholder$p$lt$ctl02$CPSO_AllDoctorsSearch$ConcernsState":"closed",
+      "p$lt$ctl01$pageplaceholder$p$lt$ctl02$CPSO_AllDoctorsSearch$txtLastNameQuick":"",
+      "p$lt$ctl01$pageplaceholder$p$lt$ctl02$CPSO_AllDoctorsSearch$txtCPSONumber":"",
+      "p$lt$ctl01$pageplaceholder$p$lt$ctl02$CPSO_AllDoctorsSearch$txtLastName":"",
+      "p$lt$ctl01$pageplaceholder$p$lt$ctl02$CPSO_AllDoctorsSearch$grpGender":" ",
+      "p$lt$ctl01$pageplaceholder$p$lt$ctl02$CPSO_AllDoctorsSearch$ddHospitalName":	"-1",
+      "p$lt$ctl01$pageplaceholder$p$lt$ctl02$CPSO_AllDoctorsSearch$ddLanguage":	"08",
 
-      "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$advancedState": "open",
-      "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$ConcernsState": "closed",
-      "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$txtCPSONumber": "",
-      "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$txtLastNameQuick": "",
-
-
-
-      "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$txtLastName": "",
-      "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$grpGender": " ",
-      "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$ddLanguage": "08",
-
-      //"p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddCity": 1965,
-      "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$grpDocType": params.spec == "001" ? "rdoDocTypeAll" : "rdoDocTypeSpecialist",
-      //"p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$ddSpecialist": 219,
-
-      "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$chkActiveDoctors": "on",
-      "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$chkPracticeRestrictions": "on",
-      "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$chkPendingHearings": "on",
-      "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$chkPastHearings": "on",
-      "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$chkHospitalNotices": "on",
-      "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$chkConcerns": "on",
-      "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$chkNotices": "on",
-      "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$txtExtraInfo": "",
-      "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$btnSubmit1": "Submit",
-      //"p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$grpStatus": "rdoStatusActive",
-
-      "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$ddHospitalCity": "",
-      "p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$ddHospitalName": -1,
+      "p$lt$ctl01$pageplaceholder$p$lt$ctl02$CPSO_AllDoctorsSearch$chkActiveDoctors":"on",
+      "p$lt$ctl01$pageplaceholder$p$lt$ctl02$CPSO_AllDoctorsSearch$chkPracticeRestrictions":"on",
+      "p$lt$ctl01$pageplaceholder$p$lt$ctl02$CPSO_AllDoctorsSearch$chkPendingHearings":"on",
+      "p$lt$ctl01$pageplaceholder$p$lt$ctl02$CPSO_AllDoctorsSearch$chkPastHearings":"on",
+      "p$lt$ctl01$pageplaceholder$p$lt$ctl02$CPSO_AllDoctorsSearch$chkHospitalNotices":	"on",
+      "p$lt$ctl01$pageplaceholder$p$lt$ctl02$CPSO_AllDoctorsSearch$chkConcerns":"on",
+      "p$lt$ctl01$pageplaceholder$p$lt$ctl02$CPSO_AllDoctorsSearch$chkNotices":"on",
+      "p$lt$ctl01$pageplaceholder$p$lt$ctl02$CPSO_AllDoctorsSearch$txtExtraInfo":"",
+      "p$lt$ctl01$pageplaceholder$p$lt$ctl02$CPSO_AllDoctorsSearch$btnSubmit1":"Submit",
 
       //__EVENTTARGET: "p$lt$ctl04$pageplaceholder$p$lt$ctl03$AllDoctorsSearch$btnSubmit",
       //Referer: 'http://www.cpso.on.ca/Public-Register/All-Doctors-Search'
       //Referer: 'http://www.cpso.on.ca/Public-Information-Services/Find-a-Doctor'
     })
 
+    payload[cityVar] = "";
+    payload[typeVar] = params.spec == "001" ? "rdoDocTypeAll" : "rdoDocTypeSpecialist";
+
     if (params.spec) {
-      payload["p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$ddSpecialist"] = params.spec;
+      payload[specVar] = params.spec;
     }
 
-    payload["p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$ddCity"] = "";
-    payload["p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$txtPostalCode"] = "";
+    payload[cityVar] = "";
+    payload[postalVar] = "";
 
     if (params.city) {
-      payload["p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$ddCity"] = params.city;
+      payload[cityVar] = params.city;
     } else if (params.postal) {
-      payload["p$lt$ctl04$pageplaceholder$p$lt$ctl02$AllDoctorsSearch$txtPostalCode"] = params.postal;
+      payload[postalVar] = params.postal;
     }
 
 
@@ -566,9 +577,6 @@ prot.getPage = function (callback, body, params, isFirstPage) {
     "__VIEWSTATEGENERATOR": vsgenerator,
     "__SCROLLPOSITIONX": 0,
     "__SCROLLPOSITIONY": 0,
-    //"p$lt$ctl01$SearchBox$txtWord": "Site Search",
-    "p$lt$ctl01$SearchBox$txtWord": "",
-    "p$lt$ctl01$SearchBox$txtWord_exWatermark_ClientState": "",
     "__VIEWSTATE": viewstate
   });
 
@@ -578,10 +586,12 @@ prot.getPage = function (callback, body, params, isFirstPage) {
     //proxy:"http://127.0.0.1:8080",
     followAllRedirects: true,
     headers: {
-      'Host': 'www.cpso.on.ca',
-      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.13; rv:60.0) Gecko/20100101 Firefox/60.0',
+      'Host': 'doctors.cpso.on.ca',
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.13; rv:68.0) Gecko/20100101 Firefox/68.0',
       'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
       'Accept-Language': 'en-US,en;q=0.5',
+      // 'Accept-Encoding': 'gzip, deflate',
+      'Referer': 'https://doctors.cpso.on.ca/?search=general',
       'Content-Type': 'application/x-www-form-urlencoded',
       "Cookie": self.cookies,
       'Connection': 'close',
@@ -589,9 +599,9 @@ prot.getPage = function (callback, body, params, isFirstPage) {
     }
   };
 
-  // if (!isFirstPage) {
-  //   options.proxy = "http://127.0.0.1:8080";
-  // }
+  if (!isFirstPage) {
+    options.proxy = "http://127.0.0.1:8080";
+  }
 
   console.log("loading next page...");
   request.post(options, function (err, httpResponse, body) {
