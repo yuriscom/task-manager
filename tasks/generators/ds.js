@@ -599,9 +599,9 @@ prot.getPage = function (callback, body, params, isFirstPage) {
     }
   };
 
-  if (!isFirstPage) {
-    options.proxy = "http://127.0.0.1:8080";
-  }
+  // if (!isFirstPage) {
+  //   options.proxy = "http://127.0.0.1:8080";
+  // }
 
   console.log("loading next page...");
   request.post(options, function (err, httpResponse, body) {
