@@ -21,7 +21,7 @@
     "restify-plugins": "^1.5.1",
     "sync-request": "^4.0.1",
     "underscore": "1.8.3",
-    "underscore.string": "2.4.0",
+    "underscore.string": "3.3.5",
     "url": "^0.11.0",
     "urlencode": "^1.1.0",
     "util": "0.10.3",
